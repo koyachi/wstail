@@ -4,12 +4,12 @@ tail -f by websocket
 
 ## Usage
 
-  $ go run wstail.go a.txt
+    $ go run wstail.go a.txt
 
 or
 
-  $ go build wstail.go
-  $ wstail a.txt
+    $ go build wstail.go
+    $ wstail a.txt
 
 
 ## See also:
