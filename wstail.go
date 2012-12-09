@@ -52,17 +52,6 @@ function init() {
     } else if (data.Key == "msg") {
       div.innerText = div.innerText + data.Value;
     }
-    /*
-    if (e.data instanceof ArrayBuffer) {
-      s = "ArrayBuffer: " + e.data.byteLength + "[";
-      var view = new Uint8Array(e.data);
-      for (var i = 0; i < view.length; ++i) {
-        s += " " + view[i];
-      }
-      s += "]";
-      div.innerText = div.innerText + s + "\n";
-    }
-    */
   };
   ws.onclose = function (e) {
     div.innerText = div.innerText + header + "closed\n";
