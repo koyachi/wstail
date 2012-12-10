@@ -72,10 +72,32 @@ func startTail(file string, ch chan string) error {
 	if err != nil {
 		return err
 	}
+	fileInfo, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	fileSize := fileInfo.Size()
+	var bufSizeMax int64 = 1024
+	var bufSize int64
+	if fileSize > bufSizeMax {
+		bufSize = bufSizeMax
+	} else {
+		bufSize = fileSize
+	}
 	go func() {
 		fmt.Println("tail start")
 		ch <- file
-		buf := make([]byte, 4*1024)
+		buf := make([]byte, bufSize)
+		var offset int64 = 0
+		{
+			n, err := f.ReadAt(buf, offset+bufSize)
+			if err != nil && err != io.EOF {
+				panic("reader.ReadString(): " + err.Error())
+			}
+			line := string(buf[0:n])
+			fmt.Printf("read[%v:%v]\n", n, line)
+			ch <- line
+		}
 		for {
 			n, err := f.Read(buf)
 			if err == io.EOF && n == 0 {
