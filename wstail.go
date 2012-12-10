@@ -47,10 +47,10 @@ function init() {
   ws.onmessage = function (e) {
     console.log(e.data);
     var data = JSON.parse(e.data);
-    if (data.Key == "filename") {
-      document.getElementById("info").innerText = data.Value;
-    } else if (data.Key == "msg") {
-      div.innerText = div.innerText + data.Value;
+    if (data.key == "filename") {
+      document.getElementById("info").innerText = data.value;
+    } else if (data.key == "msg") {
+      div.innerText = div.innerText + data.value;
     }
   };
   ws.onclose = function (e) {
@@ -122,8 +122,8 @@ func makeWebsocketHandlerWithChannel(ch chan string, f func(chan string, *websoc
 }
 
 type Data struct {
-	Key   string
-	Value string
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func websocketTailHandler(ch chan string, ws *websocket.Conn) {
