@@ -2,12 +2,32 @@ package main
 
 import (
 	"code.google.com/p/go.net/websocket"
-	"fmt"
+	"flag"
+	//"fmt"
+	//"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 )
 
+var (
+	viewDir = flag.String("view-dir", "", "path to view directory")
+)
+
+/*
+var templates *template.Template
+
+func loadTemplate() error {
+	var err error
+	t := template.New("wstail")
+	templates, err = t.ParseGlob(fmt.Sprintf("%s/*.html", *viewDir))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+*/
 func startTail(file string, ch chan string) error {
 	f, err := os.Open(file)
 	if err != nil {
@@ -26,7 +46,7 @@ func startTail(file string, ch chan string) error {
 		bufSize = fileSize
 	}
 	go func() {
-		fmt.Println("tail start")
+		log.Println("tail start")
 		ch <- file
 		buf := make([]byte, bufSize)
 		var offset int64 = 0
@@ -36,7 +56,7 @@ func startTail(file string, ch chan string) error {
 				panic("reader.ReadString(): " + err.Error())
 			}
 			line := string(buf[0:n])
-			fmt.Printf("read[%v:%v]\n", n, line)
+			log.Printf("read[%v:%v]\n", n, line)
 			ch <- line
 		}
 		for {
@@ -48,10 +68,10 @@ func startTail(file string, ch chan string) error {
 				panic("reader.ReadString(): " + err.Error())
 			}
 			line := string(buf[0:n])
-			fmt.Printf("read[%v:%v]\n", n, line)
+			log.Printf("read[%v:%v]\n", n, line)
 			ch <- line
 		}
-		fmt.Println("tail end")
+		log.Println("tail end")
 	}()
 	return nil
 }
@@ -68,40 +88,55 @@ type Data struct {
 }
 
 func websocketTailHandler(ch chan string, ws *websocket.Conn) {
-	fmt.Printf("tailHandler %v\n", ws)
+	log.Printf("tailHandler %v\n", ws)
 	// send first line as file name
 	fileName := <-ch
 	if err := websocket.JSON.Send(ws, Data{"filename", fileName}); err != nil {
-		fmt.Println("ERR:websoket.Message.Send(): " + err.Error())
+		log.Println("ERR:websoket.Message.Send(): " + err.Error())
 	}
 	for {
 		line := <-ch
 		if err := websocket.JSON.Send(ws, Data{"msg", line}); err != nil {
-			fmt.Println("ERR:websoket.Message.Send(): " + err.Error())
+			log.Println("ERR:websoket.Message.Send(): " + err.Error())
 		}
-		fmt.Printf("tailHandler write[%v]\n", line)
+		log.Printf("tailHandler write[%v]\n", line)
 	}
-	fmt.Println("tailHandler finished")
+	log.Println("tailHandler finished")
 }
 
 // for debug
 func pseudoSubscriber(ch chan string) {
 	for {
 		line := <-ch
-		fmt.Println("[sub]: " + line)
+		log.Println("[sub]: " + line)
 	}
 }
 
 func main() {
+	flag.Parse()
+	if *viewDir == "" {
+		for _, defaultPath := range []string{"../view", "view", "/usr/local/share/wstail/view"} {
+			if info, err := os.Stat(defaultPath); err == nil && info.IsDir() {
+				*viewDir = defaultPath
+				break
+			}
+		}
+	}
+	if *viewDir == "" {
+		log.Fatalf("view dir not found")
+	}
+	//loadTemplate()
+
 	ch := make(chan string)
 	http.Handle("/tail", websocket.Handler(makeWebsocketHandlerWithChannel(ch, websocketTailHandler)))
-	http.Handle("/", http.FileServer(http.Dir("../view")))
+	http.Handle("/", http.FileServer(http.Dir(*viewDir)))
 
-	if err := startTail(os.Args[1], ch); err != nil {
+	file := flag.Args()[0]
+	if err := startTail(file, ch); err != nil {
 		panic(err)
 	}
 
-	fmt.Println("start wstail...")
+	log.Println("start wstail...")
 	err := http.ListenAndServe(":23456", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
