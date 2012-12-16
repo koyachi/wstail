@@ -1,4 +1,4 @@
-var header = "[wstail]"
+var header = "[wstail] "
 var ws;
 function init() {
   console.log("init");
@@ -19,6 +19,7 @@ function init() {
     var data = JSON.parse(e.data);
     if (data.key == "filename") {
       document.getElementById("info").innerText = data.value;
+      document.title = header + data.value;
     } else if (data.key == "msg") {
       div.innerText = div.innerText + data.value;
     }
