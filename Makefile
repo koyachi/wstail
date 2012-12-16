@@ -1,3 +1,7 @@
+PREFIX=/usr/local
+DESTDIR=
+BINDIR=${PREFIX}/bin
+DATADIR=${PREFIX}/share
 
 SRCS = $(wildcard src/*.go)
 BINARIES = wstail
@@ -20,5 +24,9 @@ clean:
 # Programs
 .PHONY: $(BINARIES)
 
-install:
-
+install: $(BINARIES)
+	install -m 755 -d ${DESTDIR}/${BINDIR}
+	install -m 755 $(BLDDIR)/wstail ${DESTDIR}/${BINDIR}/wstail
+	install -m 755 -d ${DESTDIR}${DATADIR}
+	install -d ${DESTDIR}${DATADIR}/wstail
+	cp -r wstail/view ${DESTDIR}${DATADIR}/wstail
